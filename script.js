@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
 const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const img = s => `https://picsum.photos/seed/${s}/600/600`;
-const VID = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+const VID = 'https://www.pexels.com/download/video/39443618/';
 const VID2 = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4';
 const ago = t => { const m = (Date.now() - t) / 6e4; return m < 1 ? 'just now' : m < 60 ? ~~m + 'm' : m < 1440 ? ~~(m / 60) + 'h' : ~~(m / 1440) + 'd' };
 

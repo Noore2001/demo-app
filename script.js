@@ -3,8 +3,8 @@ const $ = s => document.querySelector(s);
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
 const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const img = s => `https://picsum.photos/seed/${s}/600/600`;
-const VID = 'https://www.pexels.com/download/video/39443618/';
-const VID2 = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4';
+const VID = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+const VID2 = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4';
 const ago = t => { const m = (Date.now() - t) / 6e4; return m < 1 ? 'just now' : m < 60 ? ~~m + 'm' : m < 1440 ? ~~(m / 60) + 'h' : ~~(m / 1440) + 'd' };
 
 let users = load('ig_users', null), posts = load('ig_posts', null), msgs = load('ig_msgs', {});
@@ -43,6 +43,21 @@ if (!localStorage.getItem('ig_v2')) {
     }
   });
   localStorage.setItem('ig_v2', 1); save();
+}
+/* migration: swap old demo video URLs for new ones */
+if (!localStorage.getItem('ig_v4')) {
+  const OLD1 = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+  const OLD2 = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4';
+  posts.forEach(p => { if (p.src === OLD1) p.src = VID; else if (p.src === OLD2) p.src = VID2; });
+  localStorage.setItem('ig_v4', 1); save();
+}
+if (!localStorage.getItem('ig_v3')) {
+  const firstUser = Object.keys(users)[0];
+  if (firstUser) {
+    posts.push({ id: Date.now() + 1e5, user: firstUser, type: 'video', src: VID, poster: 'https://cataas.com/cat',
+      caption: 'Meet my cat 🐱 #catsofinstagram #reels #cute', likes: [], comments: [], reel: true });
+  }
+  localStorage.setItem('ig_v3', 1); save();
 }
 
 /* ---------- auth ---------- */
@@ -121,12 +136,11 @@ function reelsV(v) {
 }
 function reelHTML(p) {
   const liked = p.likes.includes(me);
-  return `<div class="reel" data-id="${p.id}"><video src="${p.src}" loop muted playsinline data-act="mute"></video>
+  return `<div class="reel" data-id="${p.id}"><video src="${p.src}" ${p.poster ? `poster="${p.poster}"` : ''} loop muted playsinline data-act="mute"></video>
     <div class="side"><span data-act="like" class="${liked ? 'red' : ''}">${liked ? '♥' : '♡'}</span><small>${p.likes.length}</small>
     <span data-act="rcomment">💬</span><small>${p.comments.length}</small><span data-act="share">✈️</span></div>
     <div class="cap"><b data-act="prof" data-u="${p.user}">@${esc(p.user)}</b><br>${esc(p.caption)}</div></div>`;
-}
-const io = new IntersectionObserver(es => es.forEach(en => {
+}const io = new IntersectionObserver(es => es.forEach(en => {
   const v = en.target.querySelector('video'); en.isIntersecting ? v.play().catch(() => {}) : v.pause();
 }), { threshold: .7 });
 const observe = () => document.querySelectorAll('.reel').forEach(r => io.observe(r));

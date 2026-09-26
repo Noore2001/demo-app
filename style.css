@@ -29,7 +29,9 @@ main.messages{padding:0}
 .stories{display:flex;gap:14px;overflow-x:auto;max-width:470px;margin:0 auto 20px;padding-bottom:6px}
 .story{text-align:center;font-size:12px;cursor:pointer;flex:none;width:66px}
 .story img{width:60px;height:60px;border-radius:50%;padding:2px;border:2px solid #dc2743;object-fit:cover}
-.story span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story span:not(.plus){display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.savatar{position:relative;display:inline-block}
+.plus{position:absolute;right:-2px;bottom:0;width:20px;height:20px;line-height:18px;border-radius:50%;background:var(--blue);color:#fff;border:2px solid var(--card);font-size:15px;font-style:normal;text-align:center;cursor:pointer}
 
 /* posts */
 .post{background:var(--card);border:1px solid var(--bd);border-radius:8px;max-width:470px;margin:0 auto 24px}

@@ -84,6 +84,9 @@ main.messages{padding:0}
 #msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:6px}
 .m{max-width:65%;padding:8px 14px;border-radius:18px;background:var(--card);border:1px solid var(--bd);align-self:flex-start;word-wrap:break-word}
 .m.me{align-self:flex-end;background:var(--blue);color:#fff;border-color:var(--blue)}
+.shareCard{cursor:pointer;width:180px}
+.shareCard img,.shareCard video{width:100%;border-radius:10px;display:block;max-height:220px;object-fit:cover}
+.shareCard small{opacity:.85}
 .mform{display:flex;gap:8px;padding:12px;background:var(--card)}
 
 /* modal */

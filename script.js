@@ -137,10 +137,17 @@ function msgV(v) {
   v.innerHTML = `<div class="chat"><aside>${Object.keys(users).filter(u => u !== me).map(u =>
     `<div class="ci ${u === chatWith ? 'on' : ''}" data-act="chat" data-u="${u}"><img class="sm" src="${av(u)}">${esc(u)}</div>`).join('')}</aside>
     <section>${chatWith ? `<div class="chead"><img class="sm" src="${av(chatWith)}"><b>${esc(chatWith)}</b></div>
-      <div id="msgs">${(msgs[ckey(chatWith)] || []).map(m => `<div class="m ${m.f === me ? 'me' : ''}">${esc(m.t)}</div>`).join('') || '<p class="empty">Say hi 👋</p>'}</div>
+      <div id="msgs">${(msgs[ckey(chatWith)] || []).map(m => `<div class="m ${m.f === me ? 'me' : ''}">${msgBubble(m)}</div>`).join('') || '<p class="empty">Say hi 👋</p>'}</div>
       <div class="mform"><input id="chatIn" placeholder="Message…"><button class="pri" data-act="send">Send</button></div>`
       : '<p class="empty">Pick a chat to start messaging</p>'}</section></div>`;
   const m = $('#msgs'); if (m) m.scrollTop = m.scrollHeight;
+}
+function msgBubble(m) {
+  if (!m.shared) return esc(m.t);
+  const s = m.shared, exists = posts.some(x => x.id === s.id);
+  return `<div class="shareCard" ${exists ? `data-act="open" data-id="${s.id}"` : ''}>
+    ${s.type === 'video' ? `<video src="${s.src}" muted></video>` : `<img src="${s.src}">`}
+    <small>${esc(s.user)}'s ${s.reel ? 'reel' : 'post'}</small></div>`;
 }
 function send() {
   const i = $('#chatIn'), t = i.value.trim(); if (!t) return;
@@ -219,6 +226,19 @@ function editModal() {
     save(); closeModal(); render();
   };
 }
+function shareModal(p) {
+  const thumb = p.type === 'video' ? `<video class="prev" src="${p.src}" muted></video>` : `<img class="prev" src="${p.src}">`;
+  openModal(`<div class="box"><h3>Share ${p.reel ? 'reel' : 'post'}</h3>${thumb}
+    <div>${Object.keys(users).filter(u => u !== me).map(u =>
+      `<div class="urow" style="padding:8px 0"><img class="sm" src="${av(u)}"><div style="flex:1"><b>${esc(u)}</b></div>
+       <button class="pri" data-act="sendShare" data-id="${p.id}" data-u="${u}">Send</button></div>`).join('') || '<p class="empty">No one to share with yet.</p>'}</div>
+    <button data-act="copyLink" data-id="${p.id}">Copy link</button></div>`);
+}
+function sendShare(id, u) {
+  const p = posts.find(x => x.id === id); if (!p) return;
+  (msgs[ckey(u)] ||= []).push({ f: me, shared: { id: p.id, type: p.type, src: p.src, user: p.user, caption: p.caption, reel: p.reel } });
+  save(); closeModal(); alert(`Shared with ${u}!`);
+}
 function storyModal(u) {
   const own = (stories[u] || []).slice().sort((a, b) => b.id - a.id);
   if (own.length) {
@@ -275,7 +295,9 @@ document.addEventListener('click', e => {
     case 'comment': { const i = po.querySelector('.cm input'); if (i.value.trim()) { p.comments.push({ u: me, t: i.value.trim() }); refresh() } break }
     case 'focus': po.querySelector('.cm input').focus(); break;
     case 'rcomment': { const c = prompt('Add a comment'); if (c) { p.comments.push({ u: me, t: c }); refresh() } break }
-    case 'share': navigator.clipboard?.writeText(`${location.href}#post-${p.id}`); alert('Link copied!'); break;
+    case 'share': shareModal(p); break;
+    case 'sendShare': sendShare(+t.dataset.id, t.dataset.u); break;
+    case 'copyLink': navigator.clipboard?.writeText(`${location.href}#post-${t.dataset.id}`); t.textContent = 'Copied!'; setTimeout(() => t.textContent = 'Copy link', 1500); break;
     case 'del': if (confirm('Delete this post?')) { posts = posts.filter(x => x !== p); save(); closeModal(); render() } break;
     case 'mute': t.muted = !t.muted; break;
     case 'follow': { const f = users[me].following, u = t.dataset.u, i = f.indexOf(u); i < 0 ? f.push(u) : f.splice(i, 1); save(); render(); break }

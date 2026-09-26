@@ -8,6 +8,7 @@ const VID2 = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/frid
 const ago = t => { const m = (Date.now() - t) / 6e4; return m < 1 ? 'just now' : m < 60 ? ~~m + 'm' : m < 1440 ? ~~(m / 60) + 'h' : ~~(m / 1440) + 'd' };
 
 let users = load('ig_users', null), posts = load('ig_posts', null), msgs = load('ig_msgs', {});
+let stories = load('ig_stories', {});
 let me = localStorage.getItem('ig_me'), view = 'home', chatWith = null, profUser = null, tab = 'posts', query = '';
 
 const save = () => {
@@ -15,6 +16,7 @@ const save = () => {
     localStorage.setItem('ig_users', JSON.stringify(users));
     localStorage.setItem('ig_posts', JSON.stringify(posts));
     localStorage.setItem('ig_msgs', JSON.stringify(msgs));
+    localStorage.setItem('ig_stories', JSON.stringify(stories));
   } catch { alert('Storage full – try a smaller image/video.') }
 };
 const av = u => users[u]?.avatar || img(u);
@@ -80,8 +82,9 @@ function render() {
 /* home: stories + feed */
 function home(v) {
   const feed = posts.filter(p => !p.reel).sort((a, b) => b.id - a.id);
-  v.innerHTML = `<div class="stories">${Object.keys(users).map(u =>
-    `<div class="story" data-act="story" data-u="${u}"><img src="${av(u)}"><span>${u === me ? 'Your story' : esc(u)}</span></div>`).join('')}</div>`
+  v.innerHTML = `<div class="stories">${Object.keys(users).map(u => u === me
+    ? `<div class="story" data-act="story" data-u="${u}"><span class="savatar"><img src="${av(u)}"><b class="plus" data-act="addStory">+</b></span><span>Your story</span></div>`
+    : `<div class="story" data-act="story" data-u="${u}"><img src="${av(u)}"><span>${esc(u)}</span></div>`).join('')}</div>`
     + (feed.map(postHTML).join('') || '<p class="empty">No posts yet. Tap Create to share your first one.</p>');
 }
 function postHTML(p) {
@@ -217,9 +220,38 @@ function editModal() {
   };
 }
 function storyModal(u) {
+  const own = (stories[u] || []).slice().sort((a, b) => b.id - a.id);
+  if (own.length) {
+    const s = own[0];
+    openModal(`<div style="text-align:center;color:#fff">
+      <p><img class="sm" src="${av(u)}" style="vertical-align:middle;margin-right:6px"><b>${esc(u)}</b> <small style="color:#ccc">${ago(s.id)}</small></p>
+      ${s.type === 'video' ? `<video id="storyImg" src="${s.src}" autoplay muted playsinline></video>` : `<img id="storyImg" src="${s.src}">`}
+    </div>`);
+    if (s.type !== 'video') setTimeout(() => { if (!modal.hidden && $('#storyImg')) closeModal() }, 4000);
+    return;
+  }
   const ps = posts.filter(p => p.user === u && p.type === 'image');
-  openModal(`<div style="text-align:center;color:#fff"><p><b>${esc(u)}</b></p><img id="storyImg" src="${ps[0]?.src || av(u)}"></div>`);
+  if (!ps.length) return openModal(`<div style="text-align:center;color:#fff"><p><b>${esc(u)}</b></p><p>No story yet.</p></div>`);
+  openModal(`<div style="text-align:center;color:#fff"><p><b>${esc(u)}</b></p><img id="storyImg" src="${ps[0].src}"></div>`);
   setTimeout(() => { if (!modal.hidden && $('#storyImg')) closeModal() }, 4000);
+}
+function addStoryModal() {
+  openModal(`<div class="box"><h3>Add to your story</h3><input type="file" id="stFile" accept="image/*,video/*">
+    <div id="stPv"></div><button class="pri" data-act="publishStory">Share to story</button></div>`);
+  $('#stFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#stPv').innerHTML = f.type.startsWith('video') ? `<video class="prev" controls src="${URL.createObjectURL(f)}"></video>` : `<img class="prev" src="${URL.createObjectURL(f)}">`;
+  };
+}
+function publishStory() {
+  const f = $('#stFile').files[0]; if (!f) return alert('Choose a photo or video first.');
+  const isVid = f.type.startsWith('video');
+  const r = new FileReader();
+  r.onload = () => {
+    (stories[me] ||= []).push({ id: Date.now(), type: isVid ? 'video' : 'image', src: r.result });
+    save(); closeModal(); render();
+  };
+  r.readAsDataURL(f);
 }
 
 /* ---------- one click handler for everything ---------- */
@@ -227,10 +259,12 @@ document.addEventListener('click', e => {
   const nb = e.target.closest('nav [data-view]');
   if (nb) { view = nb.dataset.view; if (view === 'profile') { profUser = me; tab = 'posts' } return render() }
   const t = e.target.closest('[data-act]'); if (!t) return;
+  if (t.dataset.act === 'addStory') { e.stopPropagation(); addStoryModal(); return }
   const a = t.dataset.act, po = t.closest('[data-id]'), p = po && posts.find(x => x.id === +po.dataset.id);
   const refresh = () => { save(); po.outerHTML = po.classList.contains('reel') ? reelHTML(p) : postHTML(p); observe() };
   switch (a) {
     case 'create': createModal(); break;
+    case 'publishStory': publishStory(); break;
     case 'theme': document.body.classList.toggle('dark'); document.body.classList.contains('dark') ? localStorage.setItem('ig_dark', 1) : localStorage.removeItem('ig_dark'); break;
     case 'publish': publish(); break;
     case 'story': storyModal(t.dataset.u); break;

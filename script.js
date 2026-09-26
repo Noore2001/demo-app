@@ -5,7 +5,7 @@ const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const img = s => `https://picsum.photos/seed/${s}/600/600`;
 const VID = 'https://assets.mixkit.co/videos/51502/51502-720.mp4';
 const VID2 = 'https://assets.mixkit.co/videos/26108/26108-720.mp4';
-const VID2 = 'https://www.pexels.com/download/video/38299626/';
+const VID3 = 'https://www.pexels.com/download/video/38299626/';
 const ago = t => { const m = (Date.now() - t) / 6e4; return m < 1 ? 'just now' : m < 60 ? ~~m + 'm' : m < 1440 ? ~~(m / 60) + 'h' : ~~(m / 1440) + 'd' };
 
 let users = load('ig_users', null), posts = load('ig_posts', null), msgs = load('ig_msgs', {});
